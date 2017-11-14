@@ -356,7 +356,7 @@ plugin.addMiddleware = function(req, res, next) {
 					switch(err.message) {
 						case 'banned':
 							winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
-							res.status('400').render('400', {message: "Please activate your Account"});
+							res.render('400', {message: "Please activate your Account"});
 							break;
 						case 'payload-invalid':
 							winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
