@@ -56,7 +56,7 @@ payloadKeys.forEach(function(key) {
 plugin.init = function(params, callback) {
 	var router = params.router,
 		hostMiddleware = params.middleware;
-
+    router.use(middleware.pluginHooks);
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
@@ -306,7 +306,6 @@ plugin.createUser = function(userData, callback) {
 };
 
 plugin.addMiddleware = function(req, res, next) {
-	console.log("req = ", req);
 	function handleGuest (req, res, next) {
 		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it
