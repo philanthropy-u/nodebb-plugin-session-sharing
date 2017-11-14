@@ -62,16 +62,11 @@ plugin.init = function(params, callback) {
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
 
+	router.use(params.middleware.pluginHooks);
 
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
 	}
-    router.use(function (req, res, next) {
-        console.log('-----------------------');
-        console.log(req.url);
-        console.log('-----------------------');
-        next();
-    });
 	plugin.reloadSettings(callback);
 };
 
