@@ -62,8 +62,6 @@ plugin.init = function(params, callback) {
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
 
-	router.use(params.middleware.pluginHooks);
-
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
 	}
@@ -361,8 +359,7 @@ plugin.addMiddleware = function(req, res, next) {
 							winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
                             req.logout();
                             res.locals.fullRefresh = true;
-                            handleGuest(req, res, next);
-							//handleGuest.call(null, req, res, next);
+							handleGuest.call(null, req, res, next);
 							break;
 						default:
 							winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
