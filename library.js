@@ -378,16 +378,19 @@ plugin.addMiddleware = function(req, res, next) {
 			});
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
-			user.isAdministrator(req.user.uid, function(err, isAdmin) {
-				if (!isAdmin) {
-					req.logout();
-					res.locals.fullRefresh = true;
-					handleGuest(req, res, next);
-				} else {
-					// Admins can bypass
-					return next();
-				}
-			});
+            req.logout();
+            res.locals.fullRefresh = true;
+            handleGuest(req, res, next);
+			// user.isAdministrator(req.user.uid, function(err, isAdmin) {
+			// 	if (!isAdmin) {
+			// 		req.logout();
+			// 		res.locals.fullRefresh = true;
+			// 		handleGuest(req, res, next);
+			// 	} else {
+			// 		// Admins can bypass
+			// 		return next();
+			// 	}
+			// });
 		} else {
 			handleGuest.apply(null, arguments);
 		}
