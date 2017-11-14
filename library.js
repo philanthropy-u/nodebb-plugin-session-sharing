@@ -358,7 +358,6 @@ plugin.addMiddleware = function(req, res, next) {
 						case 'no-match':
 							winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
                             req.logout();
-                            res.locals.fullRefresh = true;
 							handleGuest.call(null, req, res, next);
 							break;
 						default:
