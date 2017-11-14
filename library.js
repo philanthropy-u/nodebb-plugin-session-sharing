@@ -364,8 +364,10 @@ plugin.addMiddleware = function(req, res, next) {
 							break;
 						case 'no-match':
 							winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
-
-							handleGuest.call(null, req, res, next);
+                            req.logout();
+                            res.locals.fullRefresh = true;
+                            handleGuest(req, res, next);
+							//handleGuest.call(null, req, res, next);
 							break;
 						default:
 							winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
@@ -385,7 +387,6 @@ plugin.addMiddleware = function(req, res, next) {
 			});
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
-            console.log('hello')
 			req.logout();
             res.locals.fullRefresh = true;
             handleGuest(req, res, next);
