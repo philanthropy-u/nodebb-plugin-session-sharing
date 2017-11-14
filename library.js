@@ -60,6 +60,7 @@ plugin.init = function(params, callback) {
 		console.log('-----------------------');
 		console.log(req.url);
 		console.log('-----------------------');
+		next();
     });
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
