@@ -56,7 +56,6 @@ payloadKeys.forEach(function(key) {
 plugin.init = function(params, callback) {
 	var router = params.router,
 		hostMiddleware = params.middleware;
-    router.use(hostMiddleware.pluginHooks);
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
