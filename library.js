@@ -56,7 +56,11 @@ payloadKeys.forEach(function(key) {
 plugin.init = function(params, callback) {
 	var router = params.router,
 		hostMiddleware = params.middleware;
-
+	router.use(function (req, res, next) {
+		console.log('-----------------------');
+		console.log(req.url);
+		console.log('-----------------------');
+    });
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
@@ -358,6 +362,7 @@ plugin.addMiddleware = function(req, res, next) {
 							break;
 						case 'no-match':
 							winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+
 							handleGuest.call(null, req, res, next);
 							break;
 						default:
