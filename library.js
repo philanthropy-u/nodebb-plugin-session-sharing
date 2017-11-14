@@ -56,21 +56,22 @@ payloadKeys.forEach(function(key) {
 plugin.init = function(params, callback) {
 	var router = params.router,
 		hostMiddleware = params.middleware;
-	router.use(function (req, res, next) {
-		console.log('-----------------------');
-		console.log(req.url);
-		console.log('-----------------------');
-		next();
-    });
+
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
 
+
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
 	}
-
+    router.use(function (req, res, next) {
+        console.log('-----------------------');
+        console.log(req.url);
+        console.log('-----------------------');
+        next();
+    });
 	plugin.reloadSettings(callback);
 };
 
