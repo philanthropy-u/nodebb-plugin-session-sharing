@@ -306,6 +306,7 @@ plugin.createUser = function(userData, callback) {
 };
 
 plugin.addMiddleware = function(req, res, next) {
+	console.log("req = ", req);
 	function handleGuest (req, res, next) {
 		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it
