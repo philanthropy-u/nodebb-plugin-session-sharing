@@ -356,7 +356,7 @@ plugin.addMiddleware = function(req, res, next) {
 					switch(err.message) {
 						case 'banned':
 							winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
-							next();
+							res.status('400').render('400', {message: "Please activate your Account"});
 							break;
 						case 'payload-invalid':
 							winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
@@ -390,16 +390,6 @@ plugin.addMiddleware = function(req, res, next) {
 			req.logout();
             res.locals.fullRefresh = true;
             handleGuest(req, res, next);
-			// user.isAdministrator(req.user.uid, function(err, isAdmin) {
-			// 	if (!isAdmin) {
-			// 		req.logout();
-			// 		res.locals.fullRefresh = true;
-			// 		handleGuest(req, res, next);
-			// 	} else {
-			// 		// Admins can bypass
-			// 		return next();
-			// 	}
-			// });
 		} else {
 			handleGuest.apply(null, arguments);
 		}
