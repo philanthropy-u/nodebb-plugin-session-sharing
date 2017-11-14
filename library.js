@@ -378,7 +378,8 @@ plugin.addMiddleware = function(req, res, next) {
 			});
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
-            req.logout();
+            console.log('hello')
+			req.logout();
             res.locals.fullRefresh = true;
             handleGuest(req, res, next);
 			// user.isAdministrator(req.user.uid, function(err, isAdmin) {
