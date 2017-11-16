@@ -383,7 +383,8 @@ plugin.addMiddleware = function(req, res, next) {
             res.locals.fullRefresh = true;
             handleGuest(req, res, next);
 		} else {
-			handleGuest.apply(null, arguments);
+            winston.info('[seesion-sharing] not session , not cookie');
+            handleGuest.apply(null, arguments);
 		}
 	}
 };
