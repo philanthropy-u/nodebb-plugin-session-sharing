@@ -378,6 +378,7 @@ plugin.addMiddleware = function(req, res, next) {
 			});
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
+			winston.info('[seesion-sharing] session is true');
 			req.logout();
             res.locals.fullRefresh = true;
             handleGuest(req, res, next);
