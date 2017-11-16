@@ -384,6 +384,8 @@ plugin.addMiddleware = function(req, res, next) {
             handleGuest(req, res, next);
 		} else {
             winston.info('[seesion-sharing] not session , not cookie');
+            req.logout();
+            res.locals.fullRefresh = true;
             handleGuest.apply(null, arguments);
 		}
 	}
