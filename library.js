@@ -379,7 +379,7 @@ plugin.addMiddleware = function(req, res, next) {
 			});
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
-            winston.info('[session-sharing] uid = ' + uid + ' has session');
+            winston.info('[session-sharing] has session');
 			user.isAdministrator(req.user.uid, function(err, isAdmin) {
 				if (!isAdmin) {
 					req.logout();
@@ -391,7 +391,7 @@ plugin.addMiddleware = function(req, res, next) {
 				}
 			});
 		} else {
-            winston.info('[session-sharing] uid = ' + uid + ' has no session no cookie');
+            winston.info('[session-sharing] has no session no cookie');
             handleGuest.apply(null, arguments);
 		}
 	}
