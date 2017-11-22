@@ -370,7 +370,7 @@ plugin.addMiddleware = function(req, res, next) {
 					return;
 				}
 
-				winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
+				winston.info('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 				req.uid = uid;
 				nbbAuthController.doLogin(req, uid, function () {
 					req.session.loginLock = true;
