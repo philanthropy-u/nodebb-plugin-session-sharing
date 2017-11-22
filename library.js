@@ -15,7 +15,7 @@ var nconf = module.parent.require('nconf');
 var jwt = require('jsonwebtoken');
 
 var controllers = require('./lib/controllers');
-var nbbAuthController = module.parent.require('./controllers/authentication');
+var nbbAuthController = require.main.require('./src/controllers/authentication');
 
 /* all the user profile fields that can be passed to user.updateProfile */
 var profileFields = [
