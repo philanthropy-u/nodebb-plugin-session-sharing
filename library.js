@@ -346,7 +346,8 @@ plugin.addMiddleware = function(req, res, next) {
 
 		if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 			return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
-				if (err) {
+                winston.info('[session-sharing] uid = ' + uid + ' has cookie');
+                if (err) {
 					switch(err.message) {
 						case 'banned':
 							winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
@@ -378,6 +379,7 @@ plugin.addMiddleware = function(req, res, next) {
 			});
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
+            winston.info('[session-sharing] uid = ' + uid + ' has session');
 			user.isAdministrator(req.user.uid, function(err, isAdmin) {
 				if (!isAdmin) {
 					req.logout();
@@ -389,7 +391,8 @@ plugin.addMiddleware = function(req, res, next) {
 				}
 			});
 		} else {
-			handleGuest.apply(null, arguments);
+            winston.info('[session-sharing] uid = ' + uid + ' has no session no cookie');
+            handleGuest.apply(null, arguments);
 		}
 	}
 };
