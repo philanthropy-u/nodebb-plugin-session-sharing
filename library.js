@@ -346,7 +346,7 @@ plugin.addMiddleware = function(req, res, next) {
 
 		if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 			return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
-                winston.info('[session-sharing] uid = ' + uid + ' has cookie');
+                winston.info('[session-sharing] uid = ' + uid + ' has cookie error = '+ err);
                 if (err) {
 					switch(err.message) {
 						case 'banned':
