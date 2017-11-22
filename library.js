@@ -56,6 +56,7 @@ payloadKeys.forEach(function(key) {
 plugin.init = function(params, callback) {
 	var router = params.router,
 		hostMiddleware = params.middleware;
+
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
@@ -64,6 +65,7 @@ plugin.init = function(params, callback) {
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
 	}
+
 	plugin.reloadSettings(callback);
 };
 
@@ -198,24 +200,24 @@ plugin.findOrCreateUser = function(userData, callback) {
 
 	async.parallel(queries, function(err, checks) {
 		if (err) { return callback(err); }
-
 		async.waterfall([
 			/* check if found something to work with */
 			function(next) {
 				if (checks.uid && !isNaN(parseInt(checks.uid, 10))) {
 					var uid = parseInt(checks.uid, 10);
-					/* check if the user with the given id actually exists */
-					return user.exists(uid, function(err, exists) {
+					/* check if the user with the given username actually exists */
+					return getUidByUsername(userData.username, function(err, data) {
 						/* ignore errors, but assume the user doesn't exist  */
 						if (err) {
 							winston.warn('[session-sharing] Error while testing user existance', err);
 							return next(null, null);
 						}
-						if (exists) {
-							return next(null, uid);
+						if (data.matchCount === 1) {
+							userData.id = data.users[0].uid;
+							return next(null, data.users[0].uid);
 						}
 						/* reference is outdated, user got deleted */
-						db.deleteObjectField(plugin.settings.name + ':uid', userData.id, function(err) {
+						db.deleteObjectField(plugin.settings.name + ':uid', data.users[0].uid, function(err) {
 							next(err, null);
 						});
 					});
@@ -240,7 +242,7 @@ plugin.findOrCreateUser = function(userData, callback) {
 					});
 				}
 				setImmediate(next, null, uid, userData, false);
-			}			
+			}
 		], callback);
 	});
 };
@@ -305,86 +307,91 @@ plugin.createUser = function(userData, callback) {
 };
 
 plugin.addMiddleware = function(req, res, next) {
-    function handleGuest (req, res, next) {
-        if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
-            // If a guest redirect is specified, follow it
-            res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.originalUrl)));
-        } else if (res.locals.fullRefresh === true) {
-            res.redirect(req.url);
-        } else {
-            next();
-        }
-    }
+	function handleGuest (req, res, next) {
+		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
+			// If a guest redirect is specified, follow it
+			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.originalUrl)));
+		} else if (res.locals.fullRefresh === true) {
+			res.redirect(req.url);
+		} else {
+			next();
+		}
+	}
 
-    // Only respond to page loads by guests, not api or asset calls
-    var hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
-    var hasLoginLock = req.session.hasOwnProperty('loginLock');
+	// Only respond to page loads by guests, not api or asset calls
+	var hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
+	var hasLoginLock = req.session.hasOwnProperty('loginLock');
 
-    if (
-        !plugin.ready ||	// plugin not ready
-        (plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
-        (plugin.settings.behaviour === 'revalidate' && hasLoginLock) ||
-        req.originalUrl.startsWith(nconf.get('relative_path') + '/api')	// api routes
-    ) {
-        // Let requests through under "revalidate" behaviour only if they're logging in for the first time
-        delete req.session.loginLock;	// remove login lock for "revalidate" logins
+	if (
+		!plugin.ready ||	// plugin not ready
+		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
+		(plugin.settings.behaviour === 'revalidate' && hasLoginLock) ||
+		req.originalUrl.startsWith(nconf.get('relative_path') + '/api')	// api routes
+	) {
+		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
+		delete req.session.loginLock;	// remove login lock for "revalidate" logins
 
-        return next();
-    } else {
-        // Hook into ip blacklist functionality in core
-        if (meta.blacklist.test(req.ip)) {
-            if (hasSession) {
-                req.logout();
-                res.locals.fullRefresh = true;
-            }
+		return next();
+	} else {
+		// Hook into ip blacklist functionality in core
+		if (meta.blacklist.test(req.ip)) {
+			if (hasSession) {
+				req.logout();
+				res.locals.fullRefresh = true;
+			}
 
-            plugin.cleanup({ res: res });
-            return handleGuest.apply(null, arguments);
-        }
+			plugin.cleanup({ res: res });
+			return handleGuest.apply(null, arguments);
+		}
 
-        if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
-            return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
-                if (err) {
-                    switch(err.message) {
-                        case 'banned':
-                            winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
-                            next();
-                            break;
-                        case 'payload-invalid':
-                            winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
-                            next();
-                            break;
-                        case 'no-match':
-                            winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
-                            handleGuest.call(null, req, res, next);
-                            break;
-                        default:
-                            winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
-                            next();
-                            break;
-                    }
+		if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
+			return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
+				if (err) {
+					switch(err.message) {
+						case 'banned':
+							winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
+							next();
+							break;
+						case 'payload-invalid':
+							winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
+							next();
+							break;
+						case 'no-match':
+							winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+							handleGuest.call(null, req, res, next);
+							break;
+						default:
+							winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
+							next();
+							break;
+					}
 
-                    return;
-                }
+					return;
+				}
 
-                winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
-                req.uid = uid;
-                nbbAuthController.doLogin(req, uid, function () {
-                    req.session.loginLock = true;
-                    res.redirect(req.originalUrl);
-                });
-            });
-        } else if (hasSession) {
-            // Has login session but no cookie, can assume "revalidate" behaviour
-            user.isAdministrator(req.user.uid, function(err, isAdmin) {
-                    req.logout();
-                    res.locals.fullRefresh = true;
-                    handleGuest(req, res, next);
-            });
-        } else {
-            handleGuest.apply(null, arguments);
-        }
-    }
+				winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
+				req.uid = uid;
+				nbbAuthController.doLogin(req, uid, function () {
+					req.session.loginLock = true;
+					res.redirect(req.originalUrl);
+				});
+			});
+		} else if (hasSession) {
+			// Has login session but no cookie, can assume "revalidate" behaviour
+			user.isAdministrator(req.user.uid, function(err, isAdmin) {
+				if (!isAdmin) {
+					req.logout();
+					res.locals.fullRefresh = true;
+					handleGuest(req, res, next);
+				} else {
+					// Admins can bypass
+					return next();
+				}
+			});
+		} else {
+			handleGuest.apply(null, arguments);
+		}
+	}
 };
 
 plugin.cleanup = function(data, callback) {
@@ -475,5 +482,36 @@ plugin.reloadSettings = function(callback) {
 		callback();
 	});
 };
+
+// gets a User object from username, returns only data with only 1 user object
+// which matches the username param exactly
+function getUidByUsername(username, callback) {
+    user.search(
+        {
+            query: username
+        },
+        function(err, data) {
+            if (err) {
+                return callback(err, data);
+            } else if (data.matchCount === 0) {
+                return callback(
+                    {
+                        code: "bad-request",
+                        message: "User does not exist"
+                    },
+                    data
+                );
+            } else if (data.matchCount > 1) {
+                data.matchCount = 1;
+                data.pageCount = 1;
+                data.users = data.users.filter(function(current) {
+                    return current.username === username;
+                });
+            }
+            return callback(null, data);
+        }
+    );
+};
+
 
 module.exports = plugin;
