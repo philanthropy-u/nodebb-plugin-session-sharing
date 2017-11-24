@@ -197,7 +197,7 @@ plugin.findOrCreateUser = function(userData, callback) {
         queries.mergeUid = async.apply(db.sortedSetScore, 'email:uid', userData.email);
     }
     queries.uid = async.apply(db.getObjectField, plugin.settings.name + ':uid', userData.id);
-
+console.log(queries.mergeUid);
     async.parallel(queries, function(err, checks) {
         if (err) { return callback(err); }
 
@@ -373,23 +373,17 @@ plugin.addMiddleware = function(req, res, next) {
                 req.uid = uid;
                 nbbAuthController.doLogin(req, uid, function () {
                     req.session.loginLock = true;
+                    console.log('hello')
                     res.redirect(req.originalUrl);
                 });
             });
         } else if (hasSession) {
             // Has login session but no cookie, can assume "revalidate" behaviour
-
-            user.isAdministrator(req.user.uid, function(err, isAdmin) {
-            	if (!isAdmin) {
             		req.logout();
             		res.locals.fullRefresh = true;
             		handleGuest(req, res, next);
-            	} else {
-            		// Admins can bypass
-            		return next();
-            	}
-            });
         } else {
+            console.log('guest');
             handleGuest.apply(null, arguments);
         }
     }
