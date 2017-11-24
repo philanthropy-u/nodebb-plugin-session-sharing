@@ -380,16 +380,9 @@ plugin.addMiddleware = function(req, res, next) {
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
             winston.info('[session-sharing] has session');
-			user.isAdministrator(req.user.uid, function(err, isAdmin) {
-				if (!isAdmin) {
 					req.logout();
 					res.locals.fullRefresh = true;
 					handleGuest(req, res, next);
-				} else {
-					// Admins can bypass
-					return next();
-				}
-			});
 		} else {
             winston.info('[session-sharing] has no session no cookie');
             handleGuest.apply(null, arguments);
