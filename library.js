@@ -153,7 +153,6 @@ plugin.normalizePayload = function(payload, callback) {
 		winston.warn('[session-sharing] the payload is not an object', payload);
 		return callback(new Error('payload-invalid'));
 	}
-
 	payloadKeys.forEach(function(key) {
 		var propName = plugin.settings['payload:' + key];
 		if (propName) {
@@ -186,9 +185,12 @@ plugin.normalizePayload = function(payload, callback) {
 
 plugin.verifyUser = function(uid, callback) {
 	// Check ban state of user, reject if banned
-	user.isBanned(uid, function(err, banned) {
-		callback(err || banned ? new Error('banned') : null, uid);
-	});
+	// user.isBanned(uid, function(err, banned) {
+	// 	callback(err || banned ? new Error('banned') : null, uid);
+	// });
+	user.isRegister(uid, function (err, isRegister) {
+		callback(err || !isRegister ? new Error('not-register') : null, uid);
+    });
 };
 
 plugin.findOrCreateUser = function(userData, callback) {
@@ -241,7 +243,8 @@ plugin.findOrCreateUser = function(userData, callback) {
 						next(err, uid, userData, true);
 					});
 				}
-				setImmediate(next, null, uid, userData, false);
+				setImmediate(next, null, uid, userData, false
+);
 			}
 		], callback);
 	});
@@ -321,7 +324,6 @@ plugin.addMiddleware = function(req, res, next) {
 	// Only respond to page loads by guests, not api or asset calls
 	var hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
 	var hasLoginLock = req.session.hasOwnProperty('loginLock');
-
 	if (
 		!plugin.ready ||	// plugin not ready
 		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
@@ -330,7 +332,6 @@ plugin.addMiddleware = function(req, res, next) {
 	) {
 		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
 		delete req.session.loginLock;	// remove login lock for "revalidate" logins
-
 		return next();
 	} else {
 		// Hook into ip blacklist functionality in core
@@ -361,6 +362,10 @@ plugin.addMiddleware = function(req, res, next) {
 							winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
 							handleGuest.call(null, req, res, next);
 							break;
+						case 'not-register':
+                            winston.info('[session-sharing] user is not register');
+                            res.redirect(nconf.get('edx_host'));
+                            break;
 						default:
 							winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
 							next();
@@ -383,6 +388,7 @@ plugin.addMiddleware = function(req, res, next) {
 					req.logout();
 					res.locals.fullRefresh = true;
 					handleGuest(req, res, next);
+
 		} else {
             winston.info('[session-sharing] has no session no cookie');
             handleGuest.apply(null, arguments);
@@ -482,14 +488,16 @@ plugin.reloadSettings = function(callback) {
 // gets a User object from username, returns only data with only 1 user object
 // which matches the username param exactly
 function getUidByUsername(username, callback) {
-    user.search(
-        {
-            query: username
-        },
-        function(err, data) {
+	var database = db.sessionStore.db;
+	var query = {
+        _key: /user:/i,
+        username: username
+    }
+    database.collection('objects').findOne(query, function(err, data) {
             if (err) {
                 return callback(err, data);
-            } else if (data.matchCount === 0) {
+            }
+            if (!data) {
                 return callback(
                     {
                         code: "bad-request",
@@ -497,12 +505,10 @@ function getUidByUsername(username, callback) {
                     },
                     data
                 );
-            } else if (data.matchCount > 1) {
+            } else  {
                 data.matchCount = 1;
                 data.pageCount = 1;
-                data.users = data.users.filter(function(current) {
-                    return current.username === username;
-                });
+                data.users = [data];
             }
             return callback(null, data);
         }
