@@ -488,7 +488,7 @@ plugin.reloadSettings = function(callback) {
 // gets a User object from username, returns only data with only 1 user object
 // which matches the username param exactly
 function getUidByUsername(username, callback) {
-    var database = db.sessionStore.db;
+    var database = db.client;
     var query = {
         _key: /user:/i,
         username: username
