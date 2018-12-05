@@ -206,12 +206,11 @@ plugin.verifyUser = function (token, uid, isNewUser, callback) {
     	token: token
     }, function (err) {
 	if (err) {
-		return callback(err);    
+		return callback(err);
 	}
-        // Check ban state of user, reject if banned
-        user.isBanned(uid, function (err, banned) {
-        	callback(err || banned ? new Error('banned') : null, uid);
-        });
+        user.isRegister(uid, function (err, isRegister) {
+        	callback(err || !isRegister ? new Error('not-register') : null, uid);
+    	});
     });
 };
 
@@ -266,7 +265,7 @@ plugin.findOrCreateUser = function(userData, callback) {
 					});
 				}
 				setImmediate(next, null, uid, userData, false);
-			}			
+			}
 		], callback);
 	});
 };
@@ -336,13 +335,13 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 			var join = userData.groups.filter(function (name) {
 				return !groups.includes(name);
 			});
-			
+
 			if (plugin.settings.syncGroupList === 'on') {
 				join = join.filter((group) => {
 					return plugin.settings.syncGroups.includes(group);
 				});
 		    	}
-			
+
 			var leave = groups.filter(function (name) {
 				// `registered-users` is always a joined group
 				if (name === 'registered-users') {
@@ -351,7 +350,7 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 
 				return !userData.groups.includes(name);
 			});
-			
+
 			if (plugin.settings.syncGroupList === 'on') {
             			leave = leave.filter((group) => {
             				return plugin.settings.syncGroups.includes(group);
@@ -458,6 +457,10 @@ plugin.addMiddleware = function(req, res, next) {
 							       winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
 							       handleAsGuest = true;
 							       break;
+								case 'not-register':
+									winston.info('[session-sharing] user is not register');
+									res.redirect(nconf.get('edx_host'));
+									break;
 							   default:
 							       winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
 							       break;
@@ -468,16 +471,16 @@ plugin.addMiddleware = function(req, res, next) {
 							    uid: uid,
 							    res: res,
 							    settings: plugin.settings,
-							    handleAsGuest: handleAsGuest 
+							    handleAsGuest: handleAsGuest
 							}, function(err, data) {
 							   if (data.handleAsGuest) {
 							       return handleGuest.call(null, req, res, next);
-							   } 
+							   }
 
 							   next();
 							});
 						}
-		
+
 						winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 						req.uid = uid;
 						req.loggedIn = true;
@@ -487,6 +490,7 @@ plugin.addMiddleware = function(req, res, next) {
 						});
 					});
 				} else if (hasSession) {
+					winston.info('[session-sharing] has session');
 					// Has login session but no cookie, can assume "revalidate" behaviour
 					user.isAdministrator(req.user.uid, function(err, isAdmin) {
 						if (plugin.settings.adminRevalidate === 'on' || !isAdmin) {
@@ -499,6 +503,7 @@ plugin.addMiddleware = function(req, res, next) {
 						}
 					});
 				} else {
+					winston.info('[session-sharing] has no session no cookie');
 					handleGuest.call(null, req, res, next);
 				}
 			}
