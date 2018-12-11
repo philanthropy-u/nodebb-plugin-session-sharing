@@ -205,12 +205,24 @@ plugin.verifyUser = function (token, uid, isNewUser, callback) {
     	isNewUser: isNewUser,
     	token: token
     }, function (err) {
-	if (err) {
-		return callback(err);
-	}
-        user.isRegister(uid, function (err, isRegister) {
-        	callback(err || !isRegister ? new Error('not-register') : null, uid);
-    	});
+		if (err) {
+			return callback(err);
+		}
+		/**
+		 * Logged in to philu community theme
+		 * */
+		if(user.isRegister){
+			user.isRegister(uid, function (err, isRegister) {
+				callback(err || !isRegister ? new Error('not-register') : null, uid);
+			});
+		} else {
+			/**
+			 * Logged in to other themes than philu
+			 * */
+			 user.isBanned(uid, function (err, banned) {
+				callback(err || banned ? new Error('banned') : null, uid);
+			});
+		}
     });
 };
 
