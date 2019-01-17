@@ -42,14 +42,28 @@
 						</select>
 					</div>
 					<div class="checkbox">
+							<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+								<input class="mdl-switch__input" type="checkbox" id="adminRevalidate" name="adminRevalidate" />
+								<span class="mdl-switch__label"><strong>Apply revalidation rules to administrators as well</strong></span>
+							</label>
+							<p class="help-block">
+								Administrators are exempt from the <code>revalidate</code> behaviour because a 
+								misconfiguration could lock them out of the admin panel. Enable this option to force
+								administrators to also undergo cookie revalidation, and thereby increasing security.
+							</p>
+							<p class="help-block">
+								This option is disabled by default to allow for smoother setup.
+							</p>
+						</div>
+					<div class="checkbox">
 						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
 							<input class="mdl-switch__input" type="checkbox" id="noRegistration" name="noRegistration" />
 							<span class="mdl-switch__label"><strong>Do not automatically create NodeBB accounts for unrecognized users</strong></span>
 						</label>
-						<div class="help-block">
+						<p class="help-block">
 							By default, an unrecognized user id found in a payload cookie will have a local NodeBB account automatically created for it. If enabled,
 							that cookie will not resolve into a session and that client will remain a guest.
-						</div>
+						</p>
 					</div>
 					<div class="checkbox">
 						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
@@ -60,6 +74,31 @@
 							Basic information such as username and id are required, while others are optional (first name, last name, etc.). Enable this setting to allow
 							NodeBB to automatically sync up the local profile with the information provided.
 						</div>
+					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="syncGroupJoin" name="syncGroupJoin" />
+							<span class="mdl-switch__label"><strong>Automatically join groups if present in payload</strong></span>
+						</label>
+					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="syncGroupLeave" name="syncGroupLeave" />
+							<span class="mdl-switch__label"><strong>Automatically leave groups if not present in payload</strong></span>
+						</label>
+					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="syncGroupList" name="syncGroupList" />
+							<span class="mdl-switch__label"><strong>Select groups to join/leave</strong></span>
+						</label>
+					</div>
+					<div class="form-group">
+						<select class="form-control" id="syncGroups" name="syncGroups" multiple size="10">
+							<!-- BEGIN groups -->
+							<option value="{groups.displayName}">{groups.displayName}</option>
+							<!-- END groups -->
+						</select>
 					</div>
 					<div class="form-group">
 						<label for="logoutRedirect">Logout Redirection</label>
@@ -74,6 +113,13 @@
 						<input type="text" class="form-control" id="loginOverride" name="loginOverride" />
 						<p class="help-block">
 							If set, users clicking the "Login" button will be redirected to this link instead
+						</p>
+					</div>
+					<div class="form-group">
+						<label for="registerOverride">Register Override</label>
+						<input type="text" class="form-control" id="registerOverride" name="registerOverride" />
+						<p class="help-block">
+							If set, users clicking the "Register" button will be redirected to this link instead
 						</p>
 					</div>
 				</div>
