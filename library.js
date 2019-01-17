@@ -21,15 +21,15 @@ var nbbAuthController = require.main.require('./src/controllers/authentication')
 
 /* all the user profile fields that can be passed to user.updateProfile */
 var profileFields = [
-	'username',
-	'email',
-	'fullname',
-	'website',
-	'location',
-	'groupTitle',
-	'birthday',
-	'signature',
-	'aboutme'
+    'username',
+    'email',
+    'fullname',
+    'website',
+    'location',
+    'groupTitle',
+    'birthday',
+    'signature',
+    'aboutme'
 ];
 var payloadKeys = profileFields.concat([
 	'id', // the uniq identifier of that account
@@ -54,23 +54,23 @@ var plugin = {
 };
 
 payloadKeys.forEach(function(key) {
-	plugin.settings['payload:' + key] = key;
+    plugin.settings['payload:' + key] = key;
 });
 
 plugin.init = function(params, callback) {
-	var router = params.router,
-		hostMiddleware = params.middleware;
+    var router = params.router,
+        hostMiddleware = params.middleware;
 
-	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
-	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
+    router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
+    router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
-	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
+    router.get('/api/session-sharing/lookup', controllers.retrieveUser);
 
-	if (process.env.NODE_ENV === 'development') {
-		router.get('/debug/session', plugin.generate);
-	}
+    if (process.env.NODE_ENV === 'development') {
+        router.get('/debug/session', plugin.generate);
+    }
 
-	plugin.reloadSettings(callback);
+    plugin.reloadSettings(callback);
 };
 
 plugin.appendConfig = function(config, callback) {
@@ -79,8 +79,7 @@ plugin.appendConfig = function(config, callback) {
 		loginOverride: plugin.settings.loginOverride,
 		registerOverride: plugin.settings.registerOverride
 	};
-
-	callback(null, config);
+    callback(null, config);
 };
 
 /* Websocket Listeners */
@@ -111,11 +110,11 @@ SocketPlugins.sessionSharing.showUserIds = function(socket, data, callback) {
 };
 
 SocketPlugins.sessionSharing.findUserByRemoteId = function(socket, data, callback) {
-	if (data.remoteId) {
-		plugin.getUser(data.remoteId, callback);
-	} else {
-		callback(new Error('no-remote-id-supplied'));
-	}
+    if (data.remoteId) {
+        plugin.getUser(data.remoteId, callback);
+    } else {
+        callback(new Error('no-remote-id-supplied'));
+    }
 };
 
 /* End Websocket Listeners */
@@ -400,11 +399,10 @@ function executeJoinLeave (uid, join, leave, callback) {
 };
 
 plugin.createUser = function(userData, callback) {
-	winston.verbose('[session-sharing] No user found, creating a new user for this login');
+    winston.verbose('[session-sharing] No user found, creating a new user for this login');
 
-	user.create(_.pick(userData, profileFields), function(err, uid) {
-		if (err) { return callback(err); }
-
+    user.create(_.pick(userData, profileFields), function(err, uid) {
+        if (err) { return callback(err); }
 		db.sortedSetAdd(plugin.settings.name + ':uid', uid, userData.id, function (err) {
 			callback(err, uid);
 		});
@@ -524,20 +522,20 @@ plugin.addMiddleware = function(req, res, next) {
 };
 
 plugin.cleanup = function(data, callback) {
-	if (plugin.settings.cookieDomain) {
-		winston.verbose('[session-sharing] Clearing cookie');
-		data.res.clearCookie(plugin.settings.cookieName, {
-			domain: plugin.settings.cookieDomain,
-			expires: new Date(),
-			path: '/'
-		});
-	}
+    if (plugin.settings.cookieDomain) {
+        winston.verbose('[session-sharing] Clearing cookie');
+        data.res.clearCookie(plugin.settings.cookieName, {
+            domain: plugin.settings.cookieDomain,
+            expires: new Date(),
+            path: '/'
+        });
+    }
 
-	if (typeof callback === 'function') {
-		callback();
-	} else {
-		return true;
-	}
+    if (typeof callback === 'function') {
+        callback();
+    } else {
+        return true;
+    }
 };
 
 plugin.generate = function(req, res) {
@@ -573,13 +571,13 @@ plugin.generate = function(req, res) {
 };
 
 plugin.addAdminNavigation = function(header, callback) {
-	header.plugins.push({
-		route: '/plugins/session-sharing',
-		icon: 'fa-user-secret',
-		name: 'Session Sharing'
-	});
+    header.plugins.push({
+        route: '/plugins/session-sharing',
+        icon: 'fa-user-secret',
+        name: 'Session Sharing'
+    });
 
-	callback(null, header);
+    callback(null, header);
 };
 
 plugin.reloadSettings = function(callback) {
@@ -637,5 +635,4 @@ plugin.appendTemplate = (data, callback) => {
 
 	setImmediate(callback, null, data);
 };
-
 module.exports = plugin;
