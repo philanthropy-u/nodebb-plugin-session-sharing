@@ -469,7 +469,7 @@ plugin.addMiddleware = function(req, res, next) {
 							       break;
 								case 'not-register':
 									winston.info('[session-sharing] user is not register');
-									res.redirect(nconf.get('edx_host'));
+									return res.redirect(nconf.get('edx_host'));
 									break;
 							   default:
 							       winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
