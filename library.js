@@ -207,21 +207,10 @@ plugin.verifyUser = function (token, uid, isNewUser, callback) {
 		if (err) {
 			return callback(err);
 		}
-		/**
-		 * Logged in to philu community theme
-		 * */
-		if(user.isRegister){
-			user.isRegister(uid, function (err, isRegister) {
-				callback(err || !isRegister ? new Error('not-register') : null, uid);
-			});
-		} else {
-			/**
-			 * Logged in to other themes than philu
-			 * */
-			 user.isBanned(uid, function (err, banned) {
-				callback(err || banned ? new Error('banned') : null, uid);
-			});
-		}
+		// check if user is banned by admin
+		user.isBanned(uid, function (err, banned) {
+			callback(err || banned ? new Error('banned') : null, uid);
+		});
     });
 };
 
