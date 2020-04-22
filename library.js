@@ -410,8 +410,8 @@ plugin.addMiddleware = async function(req, res, next) {
 		}
 	}
 	// if user session already existed
-	// then verify the session with requested user's cookie
-	async function verifySession(jwtToken) {
+	// then verify the session with requested token
+	async function verifySessionWithToken(jwtToken) {
 		var { username = '' } = jwt.verify(jwtToken, plugin.settings.secret) || {};
 		var uid = await user.async.getUidByUsername(username);
 		return uid === req.user.uid;
@@ -420,7 +420,7 @@ plugin.addMiddleware = async function(req, res, next) {
 	var hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
 	var hasLoginLock = req.session.hasOwnProperty('loginLock');
 	var jwtToken  = req.cookies && req.cookies[plugin.settings.cookieName];
-	var hasSessionVerified = hasSession && jwtToken && await verifySession(jwtToken);
+	var hasSessionVerified = hasSession && jwtToken && await verifySessionWithToken(jwtToken);
 
 	if (
 		!plugin.ready ||	// plugin not ready
