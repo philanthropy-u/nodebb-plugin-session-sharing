@@ -398,7 +398,7 @@ plugin.createUser = function(userData, callback) {
 	});
 };
 
-plugin.addMiddleware = function(req, res, next) {
+plugin.addMiddleware = async function(req, res, next) {
 	function handleGuest (req, res, next) {
 		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it
@@ -409,20 +409,27 @@ plugin.addMiddleware = function(req, res, next) {
 			next();
 		}
 	}
-
+	// if user session already existed
+	// then verify the session with requested token
+	async function verifySessionWithToken(jwtToken) {
+		var { username = '' } = jwt.verify(jwtToken, plugin.settings.secret) || {};
+		var uid = await user.async.getUidByUsername(username);
+		return uid === req.user.uid;
+	}
 	// Only respond to page loads by guests, not api or asset calls
 	var hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
 	var hasLoginLock = req.session.hasOwnProperty('loginLock');
+	var jwtToken  = req.cookies && req.cookies[plugin.settings.cookieName];
+	var hasSessionVerified = hasSession && jwtToken && await verifySessionWithToken(jwtToken);
 
 	if (
 		!plugin.ready ||	// plugin not ready
-		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
+		(plugin.settings.behaviour === 'trust' && hasSessionVerified) ||	// user logged in + "trust" behaviour
 		(plugin.settings.behaviour === 'revalidate' && hasLoginLock) ||
 		req.originalUrl.startsWith(nconf.get('relative_path') + '/api')	// api routes
 	) {
 		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
 		delete req.session.loginLock;	// remove login lock for "revalidate" logins
-
 		return next();
 	} else {
 		// Hook into ip blacklist functionality in core
